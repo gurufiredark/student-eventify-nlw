@@ -3,7 +3,7 @@ package br.com.nwl.events.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import br.com.nwl.events.exception.EventNotFoundExeption;
+import br.com.nwl.events.exception.EventNotFoundException;
 import br.com.nwl.events.exception.SubscriptionConflictException;
 import br.com.nwl.events.exception.UserIndicadorNotFoundException;
 import br.com.nwl.events.dto.SubscriptionResponse;
@@ -16,49 +16,35 @@ import br.com.nwl.events.model.Event;
 
 @Service
 public class SubscriptionService {
-
+    
     @Autowired
     private EventRepo evtRepo;
-
     @Autowired
     private UserRepo userRepo;
-
     @Autowired
     private SubscriptionRepo subRepo;
-
-    public SubscriptionResponse creatNewSubscription(String eventName, User user, Integer userId) {
-        
-        // recupera o evento pelo nome
+    public SubscriptionResponse createNewSubscription(String eventName, User user, Integer userId){
         Event evt = evtRepo.findByPrettyName(eventName);
-        if(evt == null) {
-            throw new EventNotFoundExeption("Evento " + eventName + " não encontrado");
+        if (evt == null){
+            throw new EventNotFoundException("Evento " + eventName+ " não existe");
         }
-
         User userRec = userRepo.findByEmail(user.getEmail());
-        if (userRec == null) {
+        if(userRec == null){
             userRec = userRepo.save(user);
         }
-
         User indicador = userRepo.findById(userId).orElse(null);
         if (indicador == null) {
-            throw new UserIndicadorNotFoundException("Usuario " + userId + " indicador não existe");
+            throw new UserIndicadorNotFoundException("Usuário " +userId+ " indicador não existe");
         }
-
-        user = userRepo.save(user);
-        
         Subscription subs = new Subscription();
         subs.setEvent(evt);
         subs.setSubscriber(userRec);
         subs.setIndication(indicador);
-
         Subscription tmpSub = subRepo.findByEventAndSubscriber(evt, userRec);
-        if (tmpSub != null) {
-            throw new SubscriptionConflictException("Ja existe inscrição para o usuário " + userRec.getName() + " no evento " + evt.getTitle());
+        if(tmpSub != null){
+            throw new SubscriptionConflictException("Já existe incrição para o usuário " + userRec.getName() + " no evento " + evt.getTitle());
         }
-
         Subscription res = subRepo.save(subs);
-        
-        return new SubscriptionResponse(res.getSubscriptionNumber(), "http://codecraft.com/subscription" + res.getEvent().getPrettyName()+ "/" + res.getSubscriber().getId());
-
+        return new SubscriptionResponse(res.getSubscriptionNumber(), "http://codecraft.com/subscription/"+res.getEvent().getPrettyName()+"/"+res.getSubscriber().getId());
     }
 }
