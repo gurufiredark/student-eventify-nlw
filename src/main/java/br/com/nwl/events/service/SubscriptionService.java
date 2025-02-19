@@ -24,7 +24,7 @@ public class SubscriptionService {
     private UserRepo userRepo;
 
     @Autowired
-    private SubscriptionRepo subsRepo;
+    private SubscriptionRepo subRepo;
 
     public SubscriptionResponse creatNewSubscription(String eventName, User user, Integer userId) {
         
@@ -40,7 +40,7 @@ public class SubscriptionService {
         }
 
         User indicador = userRepo.findById(userId).orElse(null);
-        if (indicador != null) {
+        if (indicador == null) {
             throw new UserIndicadorNotFoundException("Usuario " + userId + " indicador não existe");
         }
 
@@ -51,12 +51,12 @@ public class SubscriptionService {
         subs.setSubscriber(userRec);
         subs.setIndication(indicador);
 
-        Subscription tmpSub = subsRepo.findByEventAndSubscriber(evt, userRec);
+        Subscription tmpSub = subRepo.findByEventAndSubscriber(evt, userRec);
         if (tmpSub != null) {
             throw new SubscriptionConflictException("Ja existe inscrição para o usuário " + userRec.getName() + " no evento " + evt.getTitle());
         }
 
-        Subscription res = subsRepo.save(subs);
+        Subscription res = subRepo.save(subs);
         
         return new SubscriptionResponse(res.getSubscriptionNumber(), "http://codecraft.com/subscription" + res.getEvent().getPrettyName()+ "/" + res.getSubscriber().getId());
 
